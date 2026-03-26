@@ -23,7 +23,7 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '11'
 
       - name: Download JMeter
@@ -32,19 +32,27 @@ jobs:
           tar -xzf apache-jmeter-5.6.3.tgz
           mv apache-jmeter-5.6.3 jmeter
 
-      # ✅ STEP 3: PRINT INPUT VALUES (DEBUG STEP)
       - name: Print workflow input values
         run: |
-          echo "Threads from UI : ${{ github.event.inputs.threads }}"
-          echo "Rampup from UI  : ${{ github.event.inputs.rampup }}"
+          echo "Threads : ${{ github.event.inputs.threads }}"
+          echo "Rampup  : ${{ github.event.inputs.rampup }}"
 
       - name: Run JMeter Test
         run: |
-          rm -rf results/html-report
-          rm -f results/result.jtl
+          rm -rf results
           mkdir -p results
 
           jmeter/bin/jmeter -n \
             -t scripts/ReqRes_Auth_Flow_Test_Plan.jmx \
             -q config/env.properties \
             -Jthreads=${{ github.event.inputs.threads }} \
+            -Jrampup=${{ github.event.inputs.rampup }} \
+            -l results/result.jtl \
+            -e -o results/html-report
+
+      - name: Upload JMeter HTML Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter-html-report
+          path: results/html-report
+``
