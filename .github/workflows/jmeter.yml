@@ -17,12 +17,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: 'temurin'
           java-version: '11'
 
       - name: Download JMeter
@@ -30,21 +31,16 @@ jobs:
           wget https://downloads.apache.org/jmeter/binaries/apache-jmeter-5.6.3.tgz
           tar -xzf apache-jmeter-5.6.3.tgz
           mv apache-jmeter-5.6.3 jmeter
-          chmod +x jmeter/bin/jmeter
 
-      - name: Debug project structure
+      - name: Print workflow input values
         run: |
-          echo "==== ROOT ===="
-          ls -l
-          echo "==== scripts ===="
-          ls -l scripts || true
-          echo "==== config ===="
-          ls -l config || true
+          echo "Threads from UI : ${{ github.event.inputs.threads }}"
+          echo "Rampup from UI  : ${{ github.event.inputs.rampup }}"
 
-      - name: Run JMeter Test (safe mode)
-        continue-on-error: true
+      - name: Run JMeter Test
         run: |
-          rm -rf results
+          rm -rf results/html-report
+          rm -f results/result.jtl
           mkdir -p results
 
           jmeter/bin/jmeter -n \
@@ -53,22 +49,20 @@ jobs:
             -Jthreads=${{ github.event.inputs.threads }} \
             -Jrampup=${{ github.event.inputs.rampup }} \
             -l results/result.jtl \
-            -j results/jmeter.log
+            -e -o results/html-report
 
-      - name: Generate HTML Report
+      - name: Check if HTML report was generated
         run: |
-          jmeter/bin/jmeter -g results/result.jtl \
-            -o results/html-report
+          if [ ! -d "results/html-report" ]; then
+            echo "❌ HTML report folder was NOT created"
+            echo "Listing results folder:"
+            ls -R results || true
+            exit 1
+          fi
+          echo "✅ HTML report folder exists"
 
       - name: Upload HTML Report
         uses: actions/upload-artifact@v4
         with:
           name: jmeter-html-report
           path: results/html-report
-
-      - name: Upload JMeter Log
-        uses: actions/upload-artifact@v4
-        with:
-          name: jmeter-log
-          path: results/jmeter.log
-``
