@@ -1,16 +1,9 @@
 name: JMeter Performance Test
 
 on:
-  workflow_dispatch:
-    inputs:
-      threads:
-        description: "Number of users (threads)"
-        required: true
-        default: "100"
-      rampup:
-        description: "Ramp-up period (seconds)"
-        required: true
-        default: "100"
+  workflow_dispatch:   # manual trigger
+  push:                # optional: run on push
+    branches: [ main ]
 
 jobs:
   performance-test:
@@ -32,38 +25,18 @@ jobs:
           tar -xzf apache-jmeter-5.6.3.tgz
           mv apache-jmeter-5.6.3 jmeter
 
-      - name: Print workflow input values
-        run: |
-          echo "Threads from UI : ${{ github.event.inputs.threads }}"
-          echo "Rampup from UI  : ${{ github.event.inputs.rampup }}"
-
       - name: Run JMeter Test
         run: |
           rm -rf results/html-report
           rm -f results/result.jtl
-          mkdir -p results
-
           jmeter/bin/jmeter -n \
             -t scripts/ReqRes_Auth_Flow_Test_Plan.jmx \
             -q config/env.properties \
-            -Jthreads=${{ github.event.inputs.threads }} \
-            -Jrampup=${{ github.event.inputs.rampup }} \
             -l results/result.jtl \
             -e -o results/html-report
-
-      - name: Check if HTML report was generated
-        run: |
-          if [ ! -d "results/html-report" ]; then
-            echo "❌ HTML report folder was NOT created"
-            echo "Listing results folder:"
-            ls -R results || true
-            exit 1
-          fi
-          echo "✅ HTML report folder exists"
 
       - name: Upload HTML Report
         uses: actions/upload-artifact@v4
         with:
           name: jmeter-html-report
           path: results/html-report
-``
