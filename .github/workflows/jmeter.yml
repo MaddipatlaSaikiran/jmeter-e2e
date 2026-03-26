@@ -32,6 +32,12 @@ jobs:
           tar -xzf apache-jmeter-5.6.3.tgz
           mv apache-jmeter-5.6.3 jmeter
 
+      # ✅ STEP 3: PRINT INPUT VALUES (DEBUG STEP)
+      - name: Print workflow input values
+        run: |
+          echo "Threads from UI : ${{ github.event.inputs.threads }}"
+          echo "Rampup from UI  : ${{ github.event.inputs.rampup }}"
+
       - name: Run JMeter Test
         run: |
           rm -rf results/html-report
@@ -42,18 +48,3 @@ jobs:
             -t scripts/ReqRes_Auth_Flow_Test_Plan.jmx \
             -q config/env.properties \
             -Jthreads=${{ github.event.inputs.threads }} \
-            -Jrampup=${{ github.event.inputs.rampup }} \
-            -l results/result.jtl \
-            -e -o results/html-report
-
-      - name: Verify HTML report exists
-        run: |
-          echo "Listing results directory:"
-          ls -R results
-
-      - name: Upload HTML Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: jmeter-html-report
-          path: results/html-report
