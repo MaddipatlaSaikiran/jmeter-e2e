@@ -36,6 +36,7 @@ jobs:
         run: |
           rm -rf results/html-report
           rm -f results/result.jtl
+          mkdir -p results
 
           jmeter/bin/jmeter -n \
             -t scripts/ReqRes_Auth_Flow_Test_Plan.jmx \
@@ -43,3 +44,16 @@ jobs:
             -Jthreads=${{ github.event.inputs.threads }} \
             -Jrampup=${{ github.event.inputs.rampup }} \
             -l results/result.jtl \
+            -e -o results/html-report
+
+      - name: Verify HTML report exists
+        run: |
+          echo "Listing results directory:"
+          ls -R results
+
+      - name: Upload HTML Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter-html-report
+          path: results/html-report
