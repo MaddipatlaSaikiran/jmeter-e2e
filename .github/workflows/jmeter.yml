@@ -12,9 +12,6 @@ on:
         required: true
         default: "100"
 
-  push:
-    branches: [ main ]
-
 jobs:
   performance-test:
     runs-on: ubuntu-latest
@@ -46,10 +43,3 @@ jobs:
             -Jthreads=${{ github.event.inputs.threads }} \
             -Jrampup=${{ github.event.inputs.rampup }} \
             -l results/result.jtl \
-            -e -o results/html-report
-
-      - name: Upload HTML Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: jmeter-html-report
-          path: results/html-report
