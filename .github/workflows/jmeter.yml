@@ -1,8 +1,17 @@
 name: JMeter Performance Test
 
 on:
-  workflow_dispatch:   # manual trigger
-  push:                # optional: run on push
+  workflow_dispatch:
+    inputs:
+      threads:
+        description: "Number of users (threads)"
+        required: true
+        default: "100"
+      rampup:
+        description: "Ramp-up period (seconds)"
+        required: true
+        default: "100"
+  push:
     branches: [ main ]
 
 jobs:
@@ -29,13 +38,18 @@ jobs:
         run: |
           rm -rf results/html-report
           rm -f results/result.jtl
+          mkdir -p results
+
           jmeter/bin/jmeter -n \
             -t scripts/ReqRes_Auth_Flow_Test_Plan.jmx \
             -q config/env.properties \
+            -Jthreads=${{ github.event.inputs.threads || 10 }} \
+            -Jrampup=${{ github.event.inputs.rampup || 10 }} \
             -l results/result.jtl \
             -e -o results/html-report
 
       - name: Upload HTML Report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: jmeter-html-report
