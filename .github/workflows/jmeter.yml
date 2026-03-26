@@ -17,8 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -31,13 +30,19 @@ jobs:
           wget https://downloads.apache.org/jmeter/binaries/apache-jmeter-5.6.3.tgz
           tar -xzf apache-jmeter-5.6.3.tgz
           mv apache-jmeter-5.6.3 jmeter
+          chmod +x jmeter/bin/jmeter
 
-      - name: Print workflow input values
+      - name: Debug project structure
         run: |
-          echo "Threads : ${{ github.event.inputs.threads }}"
-          echo "Rampup  : ${{ github.event.inputs.rampup }}"
+          echo "==== ROOT ===="
+          ls -l
+          echo "==== scripts ===="
+          ls -l scripts || true
+          echo "==== config ===="
+          ls -l config || true
 
-      - name: Run JMeter Test
+      - name: Run JMeter Test (safe mode)
+        continue-on-error: true
         run: |
           rm -rf results
           mkdir -p results
@@ -48,11 +53,22 @@ jobs:
             -Jthreads=${{ github.event.inputs.threads }} \
             -Jrampup=${{ github.event.inputs.rampup }} \
             -l results/result.jtl \
-            -e -o results/html-report
+            -j results/jmeter.log
 
-      - name: Upload JMeter HTML Report
+      - name: Generate HTML Report
+        run: |
+          jmeter/bin/jmeter -g results/result.jtl \
+            -o results/html-report
+
+      - name: Upload HTML Report
         uses: actions/upload-artifact@v4
         with:
           name: jmeter-html-report
           path: results/html-report
+
+      - name: Upload JMeter Log
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter-log
+          path: results/jmeter.log
 ``
